@@ -117,6 +117,7 @@ export default function LicenseManager() {
       max_users: tierLimits.maxUsers,
       activated_at: null,
       expires_at: expiresAt.toISOString(),
+      created_at: new Date().toISOString(),
       notes: form.notes.trim(),
       watermark_id: watermarkId,
     };
