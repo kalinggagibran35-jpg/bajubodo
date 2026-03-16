@@ -80,12 +80,17 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
 
     const stored = getLicenseLocal();
 
-    // Tidak ada lisensi tersimpan
-    if (!stored) { setStatus('activate'); return; }
+    // Tidak ada lisensi tersimpan - bersihkan sesi login lama
+    if (!stored) {
+      localStorage.removeItem('bodo_current_user');
+      setStatus('activate');
+      return;
+    }
 
     // Cek expired lokal dulu (tanpa network)
     if (isLicenseExpired(stored)) {
       removeLicenseLocal();
+      localStorage.removeItem('bodo_current_user'); // Bersihkan sesi login
       setLicense(stored);
       setStatus('expired');
       return;
@@ -97,9 +102,10 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
       const result = await validateLicenseOnline(stored.license_key);
 
       if (!result.valid) {
-        // Hapus cache - lisensi tidak valid/revoked/expired di server
+        // Hapus cache lisensi DAN sesi login
         removeLicenseLocal();
-        setLicense(stored); // Simpan untuk tampilkan info di halaman expired
+        localStorage.removeItem('bodo_current_user');
+        setLicense(stored);
         if (result.error?.includes('kadaluarsa')) {
           setStatus('expired');
         } else {
