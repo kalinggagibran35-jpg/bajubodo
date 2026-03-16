@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { initializeStore, getCurrentUser, isSupabaseConfigured, isSetupComplete, getStoreSettings } from './store';
+import { isOwnerMode } from './lib/license';
 import { loadFromSupabase } from './lib/sync';
 import { usePWA } from './hooks/usePWA';
 import { OfflineIndicator, UpdatePrompt, InstallBanner } from './components/PWAComponents';
@@ -29,6 +30,24 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const user = getCurrentUser();
   if (!user) return <Navigate to="/login" replace />;
   if (user.role !== 'admin') return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
+function OwnerRoute({ children }: { children: React.ReactNode }) {
+  if (!isOwnerMode()) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🔒</div>
+          <h2 className="text-xl font-bold text-white mb-2">Akses Ditolak</h2>
+          <p className="text-gray-400">Halaman ini hanya untuk Owner aplikasi</p>
+          <a href="#/" className="mt-4 inline-block px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm">
+            ← Kembali
+          </a>
+        </div>
+      </div>
+    );
+  }
   return <>{children}</>;
 }
 
@@ -105,7 +124,7 @@ export default function App() {
       <HashRouter>
         <Routes>
           {/* License Manager - Owner Only */}
-          <Route path="/license-manager" element={<LicenseManager />} />
+          <Route path="/license-manager" element={<OwnerRoute><LicenseManager /></OwnerRoute>} />
 
           <Route
             path="/login"
