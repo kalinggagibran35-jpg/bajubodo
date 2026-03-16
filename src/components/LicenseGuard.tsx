@@ -27,7 +27,13 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
   const [status, setStatus] = useState<'checking' | 'valid' | 'invalid' | 'expired' | 'activate'>('checking');
   const [license, setLicense] = useState<LicenseActivation | null>(null);
   const [showExpireWarning, setShowExpireWarning] = useState(false);
-  const [setupDone, setSetupDone] = useState(isSetupComplete());
+  // Setup wizard dipicu per lisensi — bukan per localStorage global
+  // Key: "bodo_setup_<license_key>" — tiap lisensi baru selalu dapat wizard
+  const getSetupDoneForLicense = (licenseKey: string) => {
+    return localStorage.getItem('bodo_setup_' + licenseKey) === 'true';
+  };
+  const [setupDone, setSetupDone] = useState(false);
+  const [currentLicenseKey, setCurrentLicenseKey] = useState('');
 
   useEffect(() => {
     checkLicenseOnline();
@@ -83,8 +89,12 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
         return;
       }
 
+      // Jika lisensi pembeli valid, pastikan owner mode tidak aktif
+      setOwnerMode(false);
       setLicense(stored);
       setStatus('valid');
+      setCurrentLicenseKey(stored.license_key);
+      setSetupDone(getSetupDoneForLicense(stored.license_key));
       const daysLeft = getDaysRemaining(stored);
       if (daysLeft <= 7 && daysLeft > 0) setShowExpireWarning(true);
 
@@ -104,8 +114,11 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
     if (stored.domain && stored.domain !== currentDomain && stored.domain !== 'localhost') {
       setStatus('invalid'); return;
     }
+    setOwnerMode(false);
     setLicense(stored);
     setStatus('valid');
+    setCurrentLicenseKey(stored.license_key);
+    setSetupDone(getSetupDoneForLicense(stored.license_key));
     const daysLeft = getDaysRemaining(stored);
     if (daysLeft <= 7 && daysLeft > 0) setShowExpireWarning(true);
   }
@@ -123,7 +136,13 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
   }
 
   if (!setupDone) {
-    return <SetupWizard onComplete={() => setSetupDone(true)} />;
+    return <SetupWizard onComplete={() => {
+      // Tandai setup selesai untuk lisensi ini
+      if (currentLicenseKey) {
+        localStorage.setItem('bodo_setup_' + currentLicenseKey, 'true');
+      }
+      setSetupDone(true);
+    }} />;
   }
 
   return (
@@ -177,6 +196,8 @@ function LicenseActivationPage({ onActivated }: { onActivated: () => void }) {
     setLoading(true);
 
     try {
+      // Pastikan owner mode DIMATIKAN saat pembeli aktivasi lisensi
+      setOwnerMode(false);
       const result = await activateLicenseOnline(licenseKey.trim().toUpperCase());
       if (result.success) {
         onActivated();
