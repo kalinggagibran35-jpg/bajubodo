@@ -136,6 +136,18 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
   }
 
   if (!setupDone) {
+    // Bersihkan data toko lama agar wizard bisa berjalan untuk lisensi baru
+    // Data users, products, transactions, settings direset per lisensi baru
+    const clearStoreDataForNewLicense = () => {
+      localStorage.removeItem('bodo_users');
+      localStorage.removeItem('bodo_products');
+      localStorage.removeItem('bodo_transactions');
+      localStorage.removeItem('bodo_store_settings');
+      localStorage.removeItem('bodo_current_user');
+      localStorage.removeItem('bodo_setup_complete');
+    };
+    clearStoreDataForNewLicense();
+
     return <SetupWizard onComplete={() => {
       // Tandai setup selesai untuk lisensi ini
       if (currentLicenseKey) {
