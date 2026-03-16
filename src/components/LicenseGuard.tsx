@@ -16,7 +16,7 @@ import {
   removeLicenseLocal,
 } from '../lib/license';
 import { isSupabaseConfigured } from '../lib/supabase';
-import { isSetupComplete } from '../store';
+
 import SetupWizard from './SetupWizard';
 
 interface LicenseGuardProps {
@@ -130,11 +130,11 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
   }
 
   if (status === 'activate' || status === 'invalid') {
-    return <LicenseActivationPage onActivated={() => { checkLicense(); }} />;
+    return <LicenseActivationPage onActivated={() => { checkLicenseOnline(); }} />;
   }
 
   if (status === 'expired') {
-    return <LicenseExpiredPage license={license} onReactivated={() => { checkLicense(); }} />;
+    return <LicenseExpiredPage license={license} onReactivated={() => { checkLicenseOnline(); }} />;
   }
 
   if (!setupDone) {
