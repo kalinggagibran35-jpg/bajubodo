@@ -67,74 +67,78 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
   }, [status]);
 
   async function checkLicenseOnline(): Promise<void> {
+    // Selalu set checking dulu - jangan tampilkan konten sampai server konfirmasi
+    setStatus('checking');
+
+    // Owner bypass
     if (isOwnerMode()) { setStatus('valid'); return; }
-    // Jika Supabase tidak dikonfigurasi, WAJIB minta lisensi - jangan bypass
+
+    // Tanpa Supabase - wajib aktivasi
     if (!isSupabaseConfigured) { setStatus('activate'); return; }
 
     const stored = getLicenseLocal();
+
+    // Tidak ada lisensi tersimpan
     if (!stored) { setStatus('activate'); return; }
+
+    // Cek expired lokal dulu (tanpa network)
     if (isLicenseExpired(stored)) {
-      removeLicenseLocal(); // Hapus cache expired agar tidak bisa bypass
-      setStatus('expired');
+      removeLicenseLocal();
       setLicense(stored);
+      setStatus('expired');
       return;
     }
 
+    // Validasi ke Supabase - WAJIB konfirmasi server sebelum set valid
     try {
       const { validateLicenseOnline } = await import('../lib/license');
       const result = await validateLicenseOnline(stored.license_key);
 
       if (!result.valid) {
-        // Lisensi revoked/suspended/tidak valid — hapus lokal, blokir akses
-        removeLicenseLocal(); // Hapus cache agar tidak bisa bypass offline
-        setStatus(result.error?.includes('kadaluarsa') ? 'expired' : 'activate');
+        // Hapus cache - lisensi tidak valid/revoked/expired di server
+        removeLicenseLocal();
+        setLicense(stored); // Simpan untuk tampilkan info di halaman expired
+        if (result.error?.includes('kadaluarsa')) {
+          setStatus('expired');
+        } else {
+          setStatus('activate');
+        }
         return;
       }
 
+      // Cek domain
       const currentDomain = getCurrentDomain();
       if (stored.domain && stored.domain !== currentDomain && stored.domain !== 'localhost') {
+        removeLicenseLocal();
         setStatus('invalid');
         return;
       }
 
-      // Jika lisensi pembeli valid, pastikan owner mode tidak aktif
+      // VALID - konfirmasi dari Supabase sudah dapat
       setOwnerMode(false);
       setLicense(stored);
-      setStatus('valid');
       setCurrentLicenseKey(stored.license_key);
       setSetupDone(getSetupDoneForLicense(stored.license_key));
       const daysLeft = getDaysRemaining(stored);
       if (daysLeft <= 7 && daysLeft > 0) setShowExpireWarning(true);
+      setStatus('valid'); // Set valid TERAKHIR setelah semua cek selesai
 
-    } catch {
-      // Offline fallback — gunakan data lokal
-      checkLicenseLocal();
+    } catch (err) {
+      console.warn('[License] Server tidak bisa dihubungi, cek lokal:', err);
+      // Offline fallback - hanya izinkan jika ada lisensi lokal yang belum expired
+      const freshStored = getLicenseLocal();
+      if (!freshStored || isLicenseExpired(freshStored)) {
+        if (freshStored) { removeLicenseLocal(); setLicense(freshStored); }
+        setStatus(freshStored ? 'expired' : 'activate');
+        return;
+      }
+      // Ada lisensi lokal valid - izinkan akses offline sementara
+      setOwnerMode(false);
+      setLicense(freshStored);
+      setCurrentLicenseKey(freshStored.license_key);
+      setSetupDone(getSetupDoneForLicense(freshStored.license_key));
+      setStatus('valid');
     }
-  }
-
-  function checkLicenseLocal(): void {
-    if (isOwnerMode()) { setStatus('valid'); return; }
-    // Offline: jika tidak ada Supabase, tetap minta lisensi
-    if (!isSupabaseConfigured) { setStatus('activate'); return; }
-    const stored = getLicenseLocal();
-    if (!stored) { setStatus('activate'); return; }
-    if (isLicenseExpired(stored)) {
-      removeLicenseLocal(); // Hapus cache expired agar tidak bisa bypass
-      setStatus('expired');
-      setLicense(stored);
-      return;
-    }
-    const currentDomain = getCurrentDomain();
-    if (stored.domain && stored.domain !== currentDomain && stored.domain !== 'localhost') {
-      setStatus('invalid'); return;
-    }
-    setOwnerMode(false);
-    setLicense(stored);
-    setStatus('valid');
-    setCurrentLicenseKey(stored.license_key);
-    setSetupDone(getSetupDoneForLicense(stored.license_key));
-    const daysLeft = getDaysRemaining(stored);
-    if (daysLeft <= 7 && daysLeft > 0) setShowExpireWarning(true);
   }
 
   if (status === 'checking') {
@@ -342,7 +346,7 @@ function LicenseActivationPage({ onActivated }: { onActivated: () => void }) {
         {/* Contact & Owner Mode */}
         <div className="text-center space-y-3">
           <p className="text-gray-500 text-sm">
-            Belum punya lisensi? Hubungi kami di WhatsApp: <a href="https://wa.me/085298328159" target="_blank" className="text-yellow-400 hover:underline">NOMOR_WA_ANDA</a>
+            Belum punya lisensi? Hubungi kami di WhatsApp: <a href="https://wa.me/NOMOR_WA_ANDA" target="_blank" className="text-yellow-400 hover:underline">NOMOR_WA_ANDA</a>
           </p>
           <button
             onClick={() => setShowOwner(!showOwner)}
@@ -456,7 +460,7 @@ function LicenseExpiredPage({ license, onReactivated }: { license: LicenseActiva
           <div className="mt-6 p-4 bg-gray-700/50 rounded-xl border border-gray-600">
             <p className="text-gray-400 text-sm mb-3">Hubungi kami untuk perpanjangan lisensi:</p>
             <a
-              href="https://wa.me/085298328159?text=Halo, saya ingin memperpanjang lisensi Baju Bodo POS. Nama: {license?.buyer_name || ''}"
+              href="https://wa.me/NOMOR_WA_ANDA?text=Halo, saya ingin memperpanjang lisensi Baju Bodo POS. Nama: {license?.buyer_name || ''}"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full py-2.5 bg-green-600 hover:bg-green-500 text-white font-medium rounded-xl transition-colors text-sm"
