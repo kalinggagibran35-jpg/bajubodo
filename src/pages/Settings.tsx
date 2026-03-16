@@ -115,12 +115,13 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Page Title */}
+      {isOwnerMode() && (
+          {/* Page Title */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
-              <Store size={22} className="text-primary-600" />
+            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+              <Store size={22} className="text-red-600" />
             </div>
             Pengaturan Toko
           </h1>
@@ -153,7 +154,7 @@ export default function Settings() {
           {/* Logo Upload Card */}
           <div className="card">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-              <Palette size={18} className="text-primary-600" />
+              <Palette size={18} className="text-red-600" />
               Logo Toko
             </h2>
 
@@ -178,7 +179,7 @@ export default function Settings() {
                   </div>
                 ) : (
                   <div className="w-40 h-40 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center gap-2">
-                    <div className="w-16 h-16 bg-gradient-to-br from-primary-600 to-primary-800 rounded-xl flex items-center justify-center text-3xl shadow-lg">
+                    <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center text-3xl shadow-lg">
                       👗
                     </div>
                     <p className="text-xs text-gray-400 font-medium">Logo Default</p>
@@ -202,7 +203,7 @@ export default function Settings() {
                 onClick={() => setLogoMode('upload')}
                 className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   logoMode === 'upload'
-                    ? 'bg-white text-primary-700 shadow-sm'
+                    ? 'bg-white text-red-700 shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -212,7 +213,7 @@ export default function Settings() {
                 onClick={() => setLogoMode('url')}
                 className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   logoMode === 'url'
-                    ? 'bg-white text-primary-700 shadow-sm'
+                    ? 'bg-white text-red-700 shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -224,8 +225,8 @@ export default function Settings() {
               <div
                 className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
                   dragActive
-                    ? 'border-primary-500 bg-primary-50'
-                    : 'border-gray-200 hover:border-primary-400 hover:bg-primary-50/50'
+                    ? 'border-red-500 bg-red-50'
+                    : 'border-gray-200 hover:border-red-400 hover:bg-red-50/50'
                 }`}
                 onClick={() => fileRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
@@ -242,7 +243,7 @@ export default function Settings() {
                     if (file) handleLogoUpload(file);
                   }}
                 />
-                <Upload size={28} className={`mx-auto mb-2 ${dragActive ? 'text-primary-500' : 'text-gray-400'}`} />
+                <Upload size={28} className={`mx-auto mb-2 ${dragActive ? 'text-red-500' : 'text-gray-400'}`} />
                 <p className="text-sm text-gray-600 font-medium">
                   {dragActive ? 'Lepas file di sini' : 'Klik atau seret file ke sini'}
                 </p>
@@ -278,7 +279,7 @@ export default function Settings() {
           {/* Store Identity */}
           <div className="card">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-5">
-              <Store size={18} className="text-primary-600" />
+              <Store size={18} className="text-red-600" />
               Identitas Toko
             </h2>
             <div className="space-y-4">
@@ -316,7 +317,7 @@ export default function Settings() {
           {/* Contact Info */}
           <div className="card">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-5">
-              <Phone size={18} className="text-primary-600" />
+              <Phone size={18} className="text-red-600" />
               Informasi Kontak
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -364,7 +365,7 @@ export default function Settings() {
           {/* Receipt Settings */}
           <div className="card">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-5">
-              <FileText size={18} className="text-primary-600" />
+              <FileText size={18} className="text-red-600" />
               Pengaturan Struk
             </h2>
             <div>
@@ -490,7 +491,7 @@ export default function Settings() {
                         <img src={settings.store_logo} alt="Logo" className="w-full h-full object-contain" />
                       </div>
                     ) : (
-                      <div className="w-11 h-11 bg-gradient-to-br from-primary-600 to-primary-800 rounded-xl flex items-center justify-center text-2xl shadow-lg shrink-0">
+                      <div className="w-11 h-11 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center text-2xl shadow-lg shrink-0">
                         👗
                       </div>
                     )}
@@ -498,7 +499,7 @@ export default function Settings() {
                       <h1 className="text-lg font-bold text-gray-900 leading-tight truncate">
                         {settings.store_name || 'Nama Toko'}
                       </h1>
-                      <p className="text-xs text-primary-600 font-medium">POS System</p>
+                      <p className="text-xs text-red-600 font-medium">POS System</p>
                     </div>
                   </div>
                 </div>
@@ -507,7 +508,7 @@ export default function Settings() {
               {/* Preview Login */}
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Halaman Login</p>
-                <div className="bg-gradient-to-br from-primary-800 via-primary-700 to-primary-900 rounded-2xl p-8 text-white max-w-sm">
+                <div className="bg-gradient-to-br from-red-800 via-red-700 to-red-900 rounded-2xl p-8 text-white max-w-sm">
                   {settings.store_logo ? (
                     <div className="w-20 h-20 rounded-2xl overflow-hidden bg-white/10 backdrop-blur flex items-center justify-center mb-4 shadow-xl">
                       <img src={settings.store_logo} alt="Logo" className="w-full h-full object-contain p-1" />
@@ -517,9 +518,9 @@ export default function Settings() {
                   )}
                   <h1 className="text-3xl font-bold mb-2 leading-tight">
                     {settings.store_name || 'Nama Toko'}<br />
-                    <span className="text-gold-400">POS System</span>
+                    <span className="text-yellow-400">POS System</span>
                   </h1>
-                  <p className="text-sm text-primary-200">{settings.store_subtitle || 'Deskripsi toko'}</p>
+                  <p className="text-sm text-red-200">{settings.store_subtitle || 'Deskripsi toko'}</p>
                 </div>
               </div>
 
@@ -694,6 +695,7 @@ function LicenseStatusSection() {
         >
           🔑 Buka License Manager
         </a>
+          )}
       )}
     </div>
   );
