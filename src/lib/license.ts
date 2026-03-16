@@ -162,6 +162,31 @@ const OWNER_PASSWORD = 'Allahuakbar1@';
 export function verifyOwnerPassword(password: string): boolean {
   return password === OWNER_PASSWORD;
 }
+// ============ LICENSE LOGGING ============
+export async function logLicenseEvent(
+  licenseId: string,
+  action: 'activated' | 'validated' | 'expired' | 'revoked' | 'domain_reset' | 'reactivated' | 'validation_failed',
+  details: string = ''
+): Promise<void> {
+  try {
+    const { supabase, isSupabaseConfigured } = await import('./supabase');
+    if (!isSupabaseConfigured || !supabase) return;
+
+    await supabase.from('license_logs').insert({
+      license_id: licenseId,
+      action,
+      domain: getCurrentDomain(),
+      user_agent: navigator.userAgent.slice(0, 200),
+      ip_address: '',
+      details,
+    });
+  } catch (err) {
+    // Logging tidak boleh ganggu aplikasi utama
+    console.warn('[License] Failed to log event:', err);
+  }
+}
+
+
 
 // ============ SUPABASE LICENSE VALIDATION ============
 export async function validateLicenseOnline(licenseKey: string): Promise<{
@@ -197,6 +222,7 @@ export async function validateLicenseOnline(licenseKey: string): Promise<{
     }
 
     if (data.status === 'revoked') {
+      await logLicenseEvent(data.id, 'revoked', `Akses ditolak - status revoked dari domain: ${getCurrentDomain()}`);
       return { valid: false, error: 'Lisensi ini telah dicabut. Hubungi penyedia aplikasi.' };
     }
 
@@ -205,6 +231,7 @@ export async function validateLicenseOnline(licenseKey: string): Promise<{
     }
 
     if (data.status === 'expired' || (data.expires_at && new Date(data.expires_at) < new Date())) {
+      await logLicenseEvent(data.id, 'expired', `Lisensi kadaluarsa diakses dari domain: ${getCurrentDomain()}`);
       return { valid: false, error: 'Lisensi ini sudah kadaluarsa. Perpanjang lisensi Anda.' };
     }
 
@@ -212,6 +239,9 @@ export async function validateLicenseOnline(licenseKey: string): Promise<{
     if (data.domain_bound && data.domain_bound !== '' && data.domain_bound !== currentDomain) {
       return { valid: false, error: `Lisensi ini terikat ke domain "${data.domain_bound}". Domain Anda saat ini: "${currentDomain}".` };
     }
+
+    // Log validasi berhasil
+    await logLicenseEvent(data.id, 'validated', `Validasi dari domain: ${getCurrentDomain()}`);
 
     return {
       valid: true,
@@ -279,6 +309,10 @@ export async function activateLicenseOnline(licenseKey: string): Promise<{
   };
 
   saveLicenseLocal(activation);
+
+  // Log aktivasi ke database
+  await logLicenseEvent(license.id, 'activated', `Aktivasi dari domain: ${domain}`);
+
   return { success: true, activation };
 }
 
