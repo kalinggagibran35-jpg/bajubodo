@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { initializeStore, getCurrentUser, isSupabaseConfigured, isSetupComplete, getStoreSettings } from './store';
+import { initializeStore, getCurrentUser, isSupabaseConfigured, getStoreSettings } from './store';
 import { isOwnerMode } from './lib/license';
 import { loadFromSupabase } from './lib/sync';
 import { usePWA } from './hooks/usePWA';
