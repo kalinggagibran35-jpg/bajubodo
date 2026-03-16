@@ -115,8 +115,7 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      {isOwnerMode() && (
-          {/* Page Title */}
+      {/* Page Title */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -695,7 +694,6 @@ function LicenseStatusSection() {
         >
           🔑 Buka License Manager
         </a>
-          )}
       )}
     </div>
   );
