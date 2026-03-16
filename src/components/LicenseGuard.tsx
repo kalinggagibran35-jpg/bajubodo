@@ -16,6 +16,8 @@ import {
   removeLicenseLocal,
 } from '../lib/license';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { loadFromSupabase } from '../lib/sync';
+import { initializeStore } from '../store';
 
 import SetupWizard from './SetupWizard';
 
@@ -121,7 +123,16 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
       setSetupDone(getSetupDoneForLicense(stored.license_key));
       const daysLeft = getDaysRemaining(stored);
       if (daysLeft <= 7 && daysLeft > 0) setShowExpireWarning(true);
-      setStatus('valid'); // Set valid TERAKHIR setelah semua cek selesai
+
+      // Load data toko dari Supabase setelah lisensi terkonfirmasi
+      try {
+        await loadFromSupabase();
+        initializeStore();
+      } catch {
+        initializeStore(); // Fallback ke data lokal
+      }
+
+      setStatus('valid'); // Set valid TERAKHIR setelah semua selesai
 
     } catch (err) {
       console.warn('[License] Server tidak bisa dihubungi, cek lokal:', err);
@@ -137,6 +148,7 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
       setLicense(freshStored);
       setCurrentLicenseKey(freshStored.license_key);
       setSetupDone(getSetupDoneForLicense(freshStored.license_key));
+      initializeStore();
       setStatus('valid');
     }
   }
