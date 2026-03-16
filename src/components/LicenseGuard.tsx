@@ -66,7 +66,8 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
 
   async function checkLicenseOnline(): Promise<void> {
     if (isOwnerMode()) { setStatus('valid'); return; }
-    if (!isSupabaseConfigured) { setStatus('valid'); return; }
+    // Jika Supabase tidak dikonfigurasi, WAJIB minta lisensi - jangan bypass
+    if (!isSupabaseConfigured) { setStatus('activate'); return; }
 
     const stored = getLicenseLocal();
     if (!stored) { setStatus('activate'); return; }
@@ -106,7 +107,8 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
 
   function checkLicenseLocal(): void {
     if (isOwnerMode()) { setStatus('valid'); return; }
-    if (!isSupabaseConfigured) { setStatus('valid'); return; }
+    // Offline: jika tidak ada Supabase, tetap minta lisensi
+    if (!isSupabaseConfigured) { setStatus('activate'); return; }
     const stored = getLicenseLocal();
     if (!stored) { setStatus('activate'); return; }
     if (isLicenseExpired(stored)) { setStatus('expired'); setLicense(stored); return; }
