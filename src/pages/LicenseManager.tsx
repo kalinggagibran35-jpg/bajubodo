@@ -99,7 +99,11 @@ export default function LicenseManager() {
     const expiresAt = new Date();
     expiresAt.setMonth(expiresAt.getMonth() + form.duration_months);
 
+    // Generate unique id untuk primary key TEXT
+    const newId = Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+
     const newLicense = {
+      id: newId,
       license_key: licenseKey,
       buyer_name: form.buyer_name.trim(),
       buyer_email: form.buyer_email.trim(),
