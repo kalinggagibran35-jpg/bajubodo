@@ -75,7 +75,6 @@ function LoadingScreen() {
 
 export default function App() {
   const [loading, setLoading] = useState(true);
-  const [setupDone, setSetupDone] = useState(false);
   const pwa = usePWA();
 
   useEffect(() => {
@@ -94,20 +93,12 @@ export default function App() {
         console.error('[App] Init error:', err);
       }
       initializeStore();
-      setSetupDone(isSetupComplete());
       setLoading(false);
     }
     init();
   }, []);
 
   if (loading) return <LoadingScreen />;
-
-  // Show setup wizard if no admin exists yet
-  if (!setupDone) {
-    return (
-      <SetupWizard onComplete={() => setSetupDone(true)} />
-    );
-  }
 
   return (
     <LicenseGuard>
