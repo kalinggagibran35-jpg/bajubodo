@@ -7,6 +7,7 @@ import {
   isOwnerMode,
 } from '../lib/license';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { logLicenseEvent } from '../lib/license';
 
 interface LicenseRecord {
   id: string;
@@ -143,6 +144,7 @@ export default function LicenseManager() {
     try {
       const { error: err } = await supabase.from('licenses').update({ status }).eq('id', id);
       if (err) throw err;
+      await logLicenseEvent(id, status === 'revoked' ? 'revoked' : 'validated', `Status diubah ke: ${status} oleh Owner`);
       await loadLicenses();
     } catch (err) {
       console.error('Failed to update:', err);
@@ -158,6 +160,7 @@ export default function LicenseManager() {
         .update({ domain_bound: '', device_fingerprint: '', activated_at: null })
         .eq('id', id);
       if (err) throw err;
+      await logLicenseEvent(id, 'domain_reset', 'Domain reset oleh Owner');
       await loadLicenses();
     } catch (err) {
       console.error('Failed to reset domain:', err);
