@@ -27,12 +27,14 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
   const [status, setStatus] = useState<'checking' | 'valid' | 'invalid' | 'expired' | 'activate'>('checking');
   const [license, setLicense] = useState<LicenseActivation | null>(null);
   const [showExpireWarning, setShowExpireWarning] = useState(false);
-  // Setup wizard dipicu per lisensi — bukan per localStorage global
-  // Key: "bodo_setup_<license_key>" — tiap lisensi baru selalu dapat wizard
-  const getSetupDoneForLicense = (licenseKey: string) => {
-    return localStorage.getItem('bodo_setup_' + licenseKey) === 'true';
+  // Setup wizard hanya muncul jika browser belum pernah setup sama sekali
+  // Jika sudah ada data users di localStorage, skip wizard
+  const getSetupDoneForLicense = (_licenseKey: string) => {
+    const users = localStorage.getItem('bodo_users');
+    const setupFlag = localStorage.getItem('bodo_setup_complete');
+    return setupFlag === 'true' || (!!users && users !== '[]');
   };
-  const [setupDone, setSetupDone] = useState(false);
+  const [setupDone, setSetupDone] = useState(true); // default true, update saat lisensi valid
   const [currentLicenseKey, setCurrentLicenseKey] = useState('');
 
   useEffect(() => {
@@ -71,7 +73,12 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
 
     const stored = getLicenseLocal();
     if (!stored) { setStatus('activate'); return; }
-    if (isLicenseExpired(stored)) { setStatus('expired'); setLicense(stored); return; }
+    if (isLicenseExpired(stored)) {
+      removeLicenseLocal(); // Hapus cache expired agar tidak bisa bypass
+      setStatus('expired');
+      setLicense(stored);
+      return;
+    }
 
     try {
       const { validateLicenseOnline } = await import('../lib/license');
@@ -79,7 +86,7 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
 
       if (!result.valid) {
         // Lisensi revoked/suspended/tidak valid — hapus lokal, blokir akses
-        removeLicenseLocal();
+        removeLicenseLocal(); // Hapus cache agar tidak bisa bypass offline
         setStatus(result.error?.includes('kadaluarsa') ? 'expired' : 'activate');
         return;
       }
@@ -111,7 +118,12 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
     if (!isSupabaseConfigured) { setStatus('activate'); return; }
     const stored = getLicenseLocal();
     if (!stored) { setStatus('activate'); return; }
-    if (isLicenseExpired(stored)) { setStatus('expired'); setLicense(stored); return; }
+    if (isLicenseExpired(stored)) {
+      removeLicenseLocal(); // Hapus cache expired agar tidak bisa bypass
+      setStatus('expired');
+      setLicense(stored);
+      return;
+    }
     const currentDomain = getCurrentDomain();
     if (stored.domain && stored.domain !== currentDomain && stored.domain !== 'localhost') {
       setStatus('invalid'); return;
@@ -138,23 +150,8 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
   }
 
   if (!setupDone) {
-    // Bersihkan data toko lama agar wizard bisa berjalan untuk lisensi baru
-    // Data users, products, transactions, settings direset per lisensi baru
-    const clearStoreDataForNewLicense = () => {
-      localStorage.removeItem('bodo_users');
-      localStorage.removeItem('bodo_products');
-      localStorage.removeItem('bodo_transactions');
-      localStorage.removeItem('bodo_store_settings');
-      localStorage.removeItem('bodo_current_user');
-      localStorage.removeItem('bodo_setup_complete');
-    };
-    clearStoreDataForNewLicense();
-
     return <SetupWizard onComplete={() => {
-      // Tandai setup selesai untuk lisensi ini
-      if (currentLicenseKey) {
-        localStorage.setItem('bodo_setup_' + currentLicenseKey, 'true');
-      }
+      localStorage.setItem('bodo_setup_complete', 'true');
       setSetupDone(true);
     }} />;
   }
@@ -345,7 +342,7 @@ function LicenseActivationPage({ onActivated }: { onActivated: () => void }) {
         {/* Contact & Owner Mode */}
         <div className="text-center space-y-3">
           <p className="text-gray-500 text-sm">
-            Belum punya lisensi? Hubungi kami di <span className="text-yellow-400">WhatsApp: NOMOR_WA_ANDA</span>
+            Belum punya lisensi? Hubungi kami di WhatsApp: <a href="https://wa.me/085298328159" target="_blank" className="text-yellow-400 hover:underline">NOMOR_WA_ANDA</a>
           </p>
           <button
             onClick={() => setShowOwner(!showOwner)}
@@ -456,9 +453,21 @@ function LicenseExpiredPage({ license, onReactivated }: { license: LicenseActiva
             )}
           </button>
 
-          <p className="text-gray-500 text-sm mt-4">
-            Hubungi <span className="text-yellow-400">WhatsApp: NOMOR_WA_ANDA</span> untuk perpanjangan
-          </p>
+          <div className="mt-6 p-4 bg-gray-700/50 rounded-xl border border-gray-600">
+            <p className="text-gray-400 text-sm mb-3">Hubungi kami untuk perpanjangan lisensi:</p>
+            <a
+              href="https://wa.me/085298328159?text=Halo, saya ingin memperpanjang lisensi Baju Bodo POS. Nama: {license?.buyer_name || ''}"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-2.5 bg-green-600 hover:bg-green-500 text-white font-medium rounded-xl transition-colors text-sm"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.845L.057 23.885l6.19-1.448A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.869 9.869 0 01-5.031-1.378l-.361-.214-3.735.979.997-3.645-.235-.374A9.859 9.859 0 012.106 12C2.106 6.58 6.58 2.106 12 2.106S21.894 6.58 21.894 12 17.42 21.894 12 21.894z"/>
+              </svg>
+              Chat WhatsApp Sekarang
+            </a>
+          </div>
         </div>
       </div>
     </div>
