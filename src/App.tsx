@@ -6,7 +6,6 @@ import { loadFromSupabase } from './lib/sync';
 import { usePWA } from './hooks/usePWA';
 import { OfflineIndicator, UpdatePrompt, InstallBanner } from './components/PWAComponents';
 import LicenseGuard from './components/LicenseGuard';
-import SetupWizard from './components/SetupWizard';
 
 import Layout from './components/Layout';
 import LoginPage from './pages/Login';
@@ -99,13 +98,19 @@ export default function App() {
   useEffect(() => {
     async function init() {
       try {
-        if (isSupabaseConfigured) {
-          console.log('[App] Supabase configured, loading from cloud...');
+        // loadFromSupabase hanya dipanggil jika ada lisensi valid di localStorage
+        // Ini mencegah data users dimuat sebelum lisensi divalidasi
+        const { getLicenseLocal, isLicenseExpired, isOwnerMode } = await import('./lib/license');
+        const stored = getLicenseLocal();
+        const hasValidLicense = isOwnerMode() || (stored && !isLicenseExpired(stored));
+
+        if (isSupabaseConfigured && hasValidLicense) {
+          console.log('[App] Lisensi valid, memuat data dari cloud...');
           const connected = await loadFromSupabase();
           if (connected) {
-            console.log('[App] ✅ Supabase data loaded');
+            console.log('[App] ✅ Data berhasil dimuat');
           } else {
-            console.log('[App] ⚠️ Supabase connection failed, using local data');
+            console.log('[App] ⚠️ Gagal terhubung, menggunakan data lokal');
           }
         }
       } catch (err) {
