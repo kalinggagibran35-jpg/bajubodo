@@ -1,6 +1,7 @@
 import type { User, Product, Transaction, DashboardStats, StoreSettings } from '../types';
 import { syncInsert, syncUpdate, syncDelete, syncUpsert, syncProductStocks } from '../lib/sync';
 import { hashPassword, verifyPassword, isHashed } from '../lib/auth';
+import { getLicenseLocal, isLicenseExpired, isOwnerMode } from '../lib/license';
 
 // Re-export Supabase utilities for use by pages
 export { isSupabaseConfigured, getSupabaseStatus } from '../lib/supabase';
@@ -93,6 +94,11 @@ export async function setupFirstAdmin(name: string, username: string, password: 
 
 // Initialize store (no seed data — only initialize empty arrays if not present)
 export function initializeStore(): void {
+  // Hanya inisialisasi jika ada lisensi valid atau owner mode
+  const storedLicense = getLicenseLocal();
+  const hasValidLicense = isOwnerMode() || (storedLicense && !isLicenseExpired(storedLicense));
+  if (!hasValidLicense) return; // Jangan inisialisasi tanpa lisensi
+
   if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
     saveToStorage(STORAGE_KEYS.USERS, []);
   }
@@ -106,6 +112,16 @@ export function initializeStore(): void {
 
 // === AUTH ===
 export async function loginAsync(username: string, password: string): Promise<User | null> {
+  // SECURITY: Cek lisensi valid sebelum izinkan login
+  // Mencegah login jika lisensi expired, revoked, atau tidak ada
+  const storedLicense = getLicenseLocal();
+  const hasValidLicense = isOwnerMode() || (storedLicense && !isLicenseExpired(storedLicense));
+  if (!hasValidLicense) {
+    // Bersihkan sesi lama dan tolak login
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    return null;
+  }
+
   const users = getFromStorage<User[]>(STORAGE_KEYS.USERS, []);
 
   for (const user of users) {
@@ -435,7 +451,7 @@ export function resetStoreSettings(): StoreSettings {
  * This resets ALL data and creates a new admin account
  */
 export async function emergencyFactoryReset(secretKey: string, newAdminName: string, newAdminUsername: string, newAdminPassword: string): Promise<boolean> {
-  const EMERGENCY_KEY = 'Reset123';
+  const EMERGENCY_KEY = 'GANTI_KUNCI_DARURAT_ANDA_DISINI';
   if (secretKey !== EMERGENCY_KEY) return false;
 
   // Clear all data
@@ -471,7 +487,7 @@ export async function emergencyFactoryReset(secretKey: string, newAdminName: str
  * Reset password for a specific user by admin/owner using the emergency key
  */
 export async function emergencyResetPassword(secretKey: string, username: string, newPassword: string): Promise<boolean> {
-  const EMERGENCY_KEY = 'Reset123';
+  const EMERGENCY_KEY = 'GANTI_KUNCI_DARURAT_ANDA_DISINI';
   if (secretKey !== EMERGENCY_KEY) return false;
 
   const users = getUsers();
