@@ -364,7 +364,7 @@ function LicenseActivationPage({ onActivated }: { onActivated: () => void }) {
         {/* Contact & Owner Mode */}
         <div className="text-center space-y-3">
           <p className="text-gray-500 text-sm">
-            Belum punya lisensi? Hubungi kami di WhatsApp: <a href="https://wa.me/6285298328159" target="_blank" className="text-yellow-400 hover:underline">6285298328159</a>
+            Belum punya lisensi? Hubungi kami di WhatsApp: <a href="https://wa.me/6285298328159" target="_blank" className="text-yellow-400 hover:underline">085298328159</a>
           </p>
           <button
             onClick={() => setShowOwner(!showOwner)}
