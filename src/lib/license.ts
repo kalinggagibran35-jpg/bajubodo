@@ -157,7 +157,7 @@ export function setOwnerMode(enabled: boolean): void {
 
 // PENTING: Ganti password ini sebelum dijual!
 // Buka file ini → ubah nilai di bawah → simpan → push ke GitHub
-const OWNER_PASSWORD = 'GANTI_PASSWORD_ANDA_DISINI';
+const OWNER_PASSWORD = 'Allahuakbar1@';
 
 export function verifyOwnerPassword(password: string): boolean {
   return password === OWNER_PASSWORD;
