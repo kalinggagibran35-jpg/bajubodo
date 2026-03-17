@@ -364,7 +364,7 @@ function LicenseActivationPage({ onActivated }: { onActivated: () => void }) {
         {/* Contact & Owner Mode */}
         <div className="text-center space-y-3">
           <p className="text-gray-500 text-sm">
-            Belum punya lisensi? Hubungi kami di WhatsApp: <a href="https://wa.me/6285298328159" target="_blank" className="text-yellow-400 hover:underline">NOMOR_WA_ANDA</a>
+            Belum punya lisensi? Hubungi kami di WhatsApp: <a href="https://wa.me/6285298328159" target="_blank" className="text-yellow-400 hover:underline">6285298328159</a>
           </p>
           <button
             onClick={() => setShowOwner(!showOwner)}
@@ -478,7 +478,7 @@ function LicenseExpiredPage({ license, onReactivated }: { license: LicenseActiva
           <div className="mt-6 p-4 bg-gray-700/50 rounded-xl border border-gray-600">
             <p className="text-gray-400 text-sm mb-3">Hubungi kami untuk perpanjangan lisensi:</p>
             <a
-              href="https://wa.me/6285298328159?text=Halo, saya ingin memperpanjang lisensi Baju Bodo POS. Nama: {license?.buyer_name || ''}"
+              href={`https://wa.me/6285298328159?text=Halo, saya ingin memperpanjang lisensi Baju Bodo POS. Nama: ${license?.buyer_name || ''}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full py-2.5 bg-green-600 hover:bg-green-500 text-white font-medium rounded-xl transition-colors text-sm"
